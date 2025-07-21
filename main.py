@@ -174,10 +174,14 @@ async def transcribe_file(
             # Always include transcription_srt field
             srt_content = result.get("transcription_srt") if output_format == "both" else None
             
+            # Clean any null bytes from text fields to prevent JSON corruption
+            clean_transcription = str(result["transcription"]).replace('\x00', '') if result.get("transcription") else ""
+            clean_srt = str(srt_content).replace('\x00', '') if srt_content else None
+            
             response_data = {
                 "success": True,
-                "transcription": result["transcription"],
-                "transcription_srt": srt_content,
+                "transcription": clean_transcription,
+                "transcription_srt": clean_srt,
                 "format": output_format,
                 "language": language,
                 "speaker_diarization": enable_speaker_diarization,
@@ -185,9 +189,12 @@ async def transcribe_file(
                 "speakers": result.get("speakers", [])
             }
             
-            logger.info(f"Response format: {output_format}, SRT present: {srt_content is not None}")
+            # Clean any potential null bytes from strings before logging
+            safe_format = output_format.replace('\x00', '')
+            logger.info(f"Response format: {safe_format}, SRT present: {srt_content is not None}")
             if srt_content:
-                logger.info(f"SRT content length: {len(srt_content)}")
+                clean_len = len(str(srt_content).replace('\x00', ''))
+                logger.info(f"SRT content length: {clean_len}")
             
             return TranscriptionResponse(**response_data)
             
