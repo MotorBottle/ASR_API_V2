@@ -80,14 +80,42 @@ def generate_srt(sentence_list, merge_threshold=8000):
 
     # Initialize merging variables for the first entry
     current_spk = sentence_list[0].get('spk', None)
-    current_start = sentence_list[0]['timestamp'][0][0]
-    current_end = sentence_list[0]['timestamp'][0][1]
+    
+    # Handle different timestamp formats
+    first_timestamp = sentence_list[0]['timestamp']
+    if isinstance(first_timestamp, list) and len(first_timestamp) > 0:
+        if isinstance(first_timestamp[0], (list, tuple)) and len(first_timestamp[0]) >= 2:
+            current_start = first_timestamp[0][0]
+            current_end = first_timestamp[0][1]
+        else:
+            # If timestamp is a flat list [start, end]
+            current_start = first_timestamp[0] if len(first_timestamp) > 0 else 0
+            current_end = first_timestamp[1] if len(first_timestamp) > 1 else 0
+    else:
+        # Fallback if timestamp format is unexpected
+        current_start = 0
+        current_end = 0
+    
     current_text = sentence_list[0]['text']
 
     for sent in sentence_list[1:]:
         sent_spk = sent.get('spk', None)
-        sent_start = sent['timestamp'][0][0]
-        sent_end = sent['timestamp'][0][1]
+        
+        # Handle different timestamp formats consistently
+        sent_timestamp = sent['timestamp']
+        if isinstance(sent_timestamp, list) and len(sent_timestamp) > 0:
+            if isinstance(sent_timestamp[0], (list, tuple)) and len(sent_timestamp[0]) >= 2:
+                sent_start = sent_timestamp[0][0]
+                sent_end = sent_timestamp[0][1]
+            else:
+                # If timestamp is a flat list [start, end]
+                sent_start = sent_timestamp[0] if len(sent_timestamp) > 0 else 0
+                sent_end = sent_timestamp[1] if len(sent_timestamp) > 1 else 0
+        else:
+            # Fallback if timestamp format is unexpected
+            sent_start = 0
+            sent_end = 0
+            
         sent_text = sent['text']
 
         # Check if it meets merging conditions with current entry
@@ -95,8 +123,8 @@ def generate_srt(sentence_list, merge_threshold=8000):
         time_gap = sent_start - current_end
 
         if same_speaker and time_gap <= merge_threshold:
-            # Merge text and time
-            current_end = sent_end
+            # Merge text and time - ensure we use the latest end time
+            current_end = sent_end  # Always update to the latest sentence's end time
             current_text += ' ' + sent_text
         else:
             # Write current merged entry

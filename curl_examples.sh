@@ -77,6 +77,7 @@ if [ -f "test.wav" ]; then
         -F "output_format=both" \
         -F "language=zh" \
         -F "enable_speaker_diarization=true" \
+        -F "merge_threshold=100" \
         "${API_BASE}/transcribe" | jq .
 else
     echo "test.wav not found - skipping"
