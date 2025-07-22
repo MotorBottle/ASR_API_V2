@@ -184,7 +184,8 @@ class ASRProcessor:
         output_format: str = "text",
         language: str = "zh",
         enable_speaker_diarization: bool = False,
-        hotwords_dict: Optional[Dict[str, float]] = None
+        hotwords_dict: Optional[Dict[str, float]] = None,
+        merge_threshold: int = 8000
     ) -> Dict[str, Any]:
         """
         Process audio or video file for transcription
@@ -195,6 +196,7 @@ class ASRProcessor:
             language: Language for transcription
             enable_speaker_diarization: Enable speaker diarization
             hotwords_dict: Hotwords with weights
+            merge_threshold: Time threshold in milliseconds for merging consecutive utterances (default: 8000ms)
             
         Returns:
             Dictionary containing transcription results
@@ -258,7 +260,7 @@ class ASRProcessor:
                 
                 # Generate output based on format
                 if output_format in ["srt", "both"]:
-                    srt_content = generate_srt(sentence_info)
+                    srt_content = generate_srt(sentence_info, merge_threshold=merge_threshold)
                     
                     # Format speakers from <|spk0|> to [spk0]
                     srt_content = self._format_speakers(srt_content)

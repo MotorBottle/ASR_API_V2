@@ -97,6 +97,7 @@ async def transcribe_file(
     language: str = Form("zh", description="Language: zh (Chinese) or en (English)"),
     enable_speaker_diarization: bool = Form(False, description="Enable speaker diarization"),
     hotwords: Optional[str] = Form(None, description="Hotwords for improved recognition (one per line)"),
+    merge_threshold: int = Form(8000, description="Time threshold in milliseconds for merging consecutive utterances (default: 8000ms)"),
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """
@@ -108,6 +109,7 @@ async def transcribe_file(
         language: Language for transcription (zh or en)
         enable_speaker_diarization: Enable speaker diarization
         hotwords: Hotwords for improved recognition
+        merge_threshold: Time threshold in milliseconds for merging consecutive utterances
         
     Returns:
         Transcription result with text/srt output
@@ -165,7 +167,8 @@ async def transcribe_file(
                 output_format,
                 language,
                 enable_speaker_diarization,
-                hotwords_dict
+                hotwords_dict,
+                merge_threshold
             )
             
             # Schedule file cleanup
@@ -256,7 +259,8 @@ async def transcribe_url(
                 request.output_format,
                 request.language,
                 request.enable_speaker_diarization,
-                request.hotwords
+                request.hotwords,
+                request.merge_threshold
             )
             
             # Schedule file cleanup

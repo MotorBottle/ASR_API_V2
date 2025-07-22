@@ -64,7 +64,7 @@ class Text2SRT():
         """Get time range"""
         return (self.start_sec/1000+acc_ost, self.end_sec/1000+acc_ost)
 
-def generate_srt(sentence_list, merge_threshold=4000):
+def generate_srt(sentence_list, merge_threshold=8000):
     """
     Generate SRT subtitles, merging consecutive utterances from the same speaker.
     

@@ -12,6 +12,7 @@ class TranscriptionRequest(BaseModel):
     language: Literal["zh", "en"] = Field("zh", description="Language: zh (Chinese) or en (English)")
     enable_speaker_diarization: bool = Field(False, description="Enable speaker diarization")
     hotwords: Optional[Dict[str, float]] = Field(None, description="Hotwords with weights for improved recognition")
+    merge_threshold: int = Field(8000, description="Time threshold in milliseconds for merging consecutive utterances")
 
 class TranscriptionResponse(BaseModel):
     """Response model for transcription results"""
