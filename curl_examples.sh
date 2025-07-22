@@ -73,7 +73,7 @@ curl -X POST \
 echo -e "\n7. Transcribe with Both Text and SRT:"
 if [ -f "test.wav" ]; then
     curl -X POST \
-        -F "file=@test.m4a" \
+        -F "file=@test.wav" \
         -F "output_format=both" \
         -F "language=zh" \
         -F "enable_speaker_diarization=true" \
