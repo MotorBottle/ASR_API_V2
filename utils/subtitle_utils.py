@@ -130,7 +130,9 @@ def generate_srt(sentence_list, merge_threshold=8000):
             # Write current merged entry
             t2s = Text2SRT(current_text, [(current_start, current_end)])
             if current_spk is not None:
-                srt_total += "{}  <|spk{}|>\n{}\n".format(index, current_spk, t2s.srt())
+                # Standard SRT format: speaker ID in text content
+                srt_content = t2s.srt().replace(current_text, f"[spk{current_spk}] {current_text}")
+                srt_total += "{}\n{}\n".format(index, srt_content)
             else:
                 srt_total += "{}\n{}\n".format(index, t2s.srt())
             index += 1
@@ -144,7 +146,9 @@ def generate_srt(sentence_list, merge_threshold=8000):
     # Write the last merged entry
     t2s = Text2SRT(current_text, [(current_start, current_end)])
     if current_spk is not None:
-        srt_total += "{}  <|spk{}|>\n{}\n".format(index, current_spk, t2s.srt())
+        # Standard SRT format: speaker ID in text content
+        srt_content = t2s.srt().replace(current_text, f"[spk{current_spk}] {current_text}")
+        srt_total += "{}\n{}\n".format(index, srt_content)
     else:
         srt_total += "{}\n{}\n".format(index, t2s.srt())
 

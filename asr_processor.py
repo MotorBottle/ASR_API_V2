@@ -164,20 +164,6 @@ class ASRProcessor:
         
         return "\n".join(hotwords_lines)
     
-    def _format_speakers(self, srt_content: str) -> str:
-        """
-        Format speaker labels in SRT content from <|spk0|> to [spk0]
-        
-        Args:
-            srt_content: Original SRT content with <|spk0|> format
-            
-        Returns:
-            SRT content with [spk0] format
-        """
-        import re
-        # Replace <|spk0|> -> [spk0], <|spk1|> -> [spk1], etc.
-        return re.sub(r"<\|spk(\d+)\|>", r"[spk\1]", srt_content)
-    
     def process_file(
         self, 
         file_path: str, 
@@ -261,9 +247,6 @@ class ASRProcessor:
                 # Generate output based on format
                 if output_format in ["srt", "both"]:
                     srt_content = generate_srt(sentence_info, merge_threshold=merge_threshold)
-                    
-                    # Format speakers from <|spk0|> to [spk0]
-                    srt_content = self._format_speakers(srt_content)
                     
                     if output_format == "srt":
                         transcription = srt_content
