@@ -17,7 +17,7 @@ def time_convert(ms):
     h = "00" if h == 0 else str(h)
     mi = "00" if mi == 0 else str(mi)
     s = "00" if s == 0 else str(s)
-    tail = str(tail)
+    tail = str(tail).zfill(3)  # Pad milliseconds to 3 digits
     if len(h) == 1: h = '0' + h
     if len(mi) == 1: mi = '0' + mi
     if len(s) == 1: s = '0' + s
