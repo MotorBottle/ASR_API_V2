@@ -216,6 +216,7 @@ class ASRProcessor:
                     rec_result = self.funasr_model.generate(
                         audio_data,
                         return_spk_res=True,
+                        sentence_timestamp=True,  # Add missing sentence_timestamp parameter
                         return_raw_text=True,
                         is_final=True,
                         hotword=hotwords_str,

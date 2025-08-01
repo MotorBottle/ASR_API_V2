@@ -1,5 +1,5 @@
 # ASR API Server V2 - GPU Docker Image
-FROM nvidia/cuda:11.8-devel-ubuntu20.04
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -47,13 +47,13 @@ RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pyt
 COPY . .
 
 # Create directories for temporary files and ModelScope cache
-RUN mkdir -p /tmp/asr_api /root/.cache/modelscope
+RUN mkdir -p /tmp/asr_api /root/.cache/modelscope /app/logs
 
 # Expose port
 EXPOSE 7869
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+# Health check - give more time for model loading
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
     CMD curl -f http://localhost:7869/health || exit 1
 
 # Run the application

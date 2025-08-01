@@ -85,8 +85,8 @@ def generate_srt(sentence_list, merge_threshold=8000):
     first_timestamp = sentence_list[0]['timestamp']
     if isinstance(first_timestamp, list) and len(first_timestamp) > 0:
         if isinstance(first_timestamp[0], (list, tuple)) and len(first_timestamp[0]) >= 2:
-            current_start = first_timestamp[0][0]
-            current_end = first_timestamp[0][1]
+            current_start = first_timestamp[0][0]  # First word start time
+            current_end = first_timestamp[-1][1]   # Last word end time
         else:
             # If timestamp is a flat list [start, end]
             current_start = first_timestamp[0] if len(first_timestamp) > 0 else 0
@@ -95,6 +95,7 @@ def generate_srt(sentence_list, merge_threshold=8000):
         # Fallback if timestamp format is unexpected
         current_start = 0
         current_end = 0
+    
     
     current_text = sentence_list[0]['text']
 
@@ -105,8 +106,8 @@ def generate_srt(sentence_list, merge_threshold=8000):
         sent_timestamp = sent['timestamp']
         if isinstance(sent_timestamp, list) and len(sent_timestamp) > 0:
             if isinstance(sent_timestamp[0], (list, tuple)) and len(sent_timestamp[0]) >= 2:
-                sent_start = sent_timestamp[0][0]
-                sent_end = sent_timestamp[0][1]
+                sent_start = sent_timestamp[0][0]    # First word start time
+                sent_end = sent_timestamp[-1][1]     # Last word end time
             else:
                 # If timestamp is a flat list [start, end]
                 sent_start = sent_timestamp[0] if len(sent_timestamp) > 0 else 0
