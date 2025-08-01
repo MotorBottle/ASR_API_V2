@@ -26,12 +26,12 @@ services:
       dockerfile: Dockerfile.gpu
     container_name: asr-api-v2-gpu
     ports:
-      - "17869:17869"
+      - "17869:7869"
     environment:
       - DEVICE=cuda:0
       - LANGUAGE=zh
       - HOST=0.0.0.0
-      - PORT=17869
+      - PORT=7869
     volumes:
       - ./logs:/app/logs
       - modelscope_cache:/root/.cache/modelscope
