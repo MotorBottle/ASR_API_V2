@@ -22,6 +22,7 @@ from utils.subtitle_utils import generate_srt
 from utils.trans_utils import convert_pcm_to_float
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class ASRProcessor:
     """
