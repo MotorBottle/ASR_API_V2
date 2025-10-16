@@ -6,6 +6,7 @@ Extracted and adapted from Private-ASR project
 
 import os
 import logging
+import time
 import tempfile
 import numpy as np
 import torch
@@ -70,6 +71,42 @@ class ASRProcessor:
         except Exception as e:
             logger.error(f"Failed to load FunASR models: {e}")
             raise
+        
+        self._log_funasr_state("load_complete")
+    
+    def _log_funasr_state(self, phase: str):
+        """
+        Log internal FunASR state to help diagnose device/batching issues.
+        """
+        if self.funasr_model is None:
+            return
+        
+        info: Dict[str, Any] = {"phase": phase}
+        
+        try:
+            info["model_device"] = str(next(self.funasr_model.model.parameters()).device)
+        except (StopIteration, AttributeError):
+            info["model_device"] = "unknown"
+        
+        keys_of_interest = (
+            "device",
+            "batch_size",
+            "batch_size_s",
+            "batch_size_threshold_s",
+            "ncpu",
+            "ngpu",
+            "disable_pbar",
+        )
+        
+        for attr_name in ("kwargs", "vad_kwargs", "punc_kwargs", "spk_kwargs"):
+            attr = getattr(self.funasr_model, attr_name, None)
+            if isinstance(attr, dict):
+                for key in keys_of_interest:
+                    info[f"{attr_name}_{key}"] = attr.get(key)
+        
+        info["torch_threads"] = torch.get_num_threads()
+        
+        logger.info("FunASR state: %s", info)
     
     def _preprocess_audio(self, audio_path: str) -> Tuple[int, np.ndarray]:
         """
@@ -210,8 +247,11 @@ class ASRProcessor:
                 
                 # Process hotwords
                 hotwords_str = self._process_hotwords(hotwords_dict)
+                # Log internal state before inference
+                self._log_funasr_state("before_generate")
                 
                 # Run ASR
+                start_time = time.perf_counter()
                 if enable_speaker_diarization:
                     rec_result = self.funasr_model.generate(
                         audio_data,
@@ -236,6 +276,19 @@ class ASRProcessor:
                         en_post_proc=(language == 'en'),
                         cache={}
                     )
+                
+                elapsed = time.perf_counter() - start_time
+                audio_duration = len(audio_data) / sr if sr else 0.0
+                rtf = (elapsed / audio_duration) if audio_duration > 0 else float("inf")
+                
+                self._log_funasr_state("after_generate")
+                logger.info(
+                    "FunASR segment done: elapsed=%.3fs audio=%.3fs rtf=%.3f segments=%s",
+                    elapsed,
+                    audio_duration,
+                    rtf,
+                    len(rec_result) if isinstance(rec_result, (list, tuple)) else "NA"
+                )
                 
                 # Extract results
                 result = rec_result[0]
