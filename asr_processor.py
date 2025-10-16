@@ -109,6 +109,27 @@ class ASRProcessor:
         
         logger.info("FunASR state: %s", info)
     
+    def _prepare_inference(self):
+        """
+        Normalize PyTorch thread usage and propagate ncpu into FunASR kwargs.
+        """
+        if self.funasr_model is None:
+            return
+        
+        target_threads = int(os.getenv("TORCH_NUM_THREADS", "4"))
+        if torch.get_num_threads() != target_threads:
+            torch.set_num_threads(target_threads)
+            logger.info("Adjusted torch.set_num_threads to %d", target_threads)
+        
+        # Update core kwargs
+        self.funasr_model.kwargs["ncpu"] = target_threads
+        
+        # Update auxiliary module kwargs if they exist
+        for attr_name in ("vad_kwargs", "punc_kwargs", "spk_kwargs"):
+            attr = getattr(self.funasr_model, attr_name, None)
+            if isinstance(attr, dict):
+                attr["ncpu"] = target_threads
+    
     def _preprocess_audio(self, audio_path: str) -> Tuple[int, np.ndarray]:
         """
         Preprocess audio file to required format
@@ -248,7 +269,8 @@ class ASRProcessor:
                 
                 # Process hotwords
                 hotwords_str = self._process_hotwords(hotwords_dict)
-                # Log internal state before inference
+                # Normalize threading and log internal state before inference
+                self._prepare_inference()
                 self._log_funasr_state("before_generate")
                 
                 # Run ASR
