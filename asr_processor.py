@@ -8,6 +8,7 @@ import os
 import logging
 import time
 import tempfile
+import copy
 import numpy as np
 import torch
 import torchaudio
@@ -41,9 +42,14 @@ class ASRProcessor:
         self.device = device
         self.language = language
         self.funasr_model = None
+        self._base_kwargs: Dict[str, Any] = {}
+        self._base_vad_kwargs: Dict[str, Any] = {}
+        self._base_punc_kwargs: Dict[str, Any] = {}
+        self._base_spk_kwargs: Dict[str, Any] = {}
         
         logger.info(f"Initializing ASR processor with device: {device}, language: {language}")
         self._load_models()
+        self._snapshot_base_config()
     
     def _load_models(self):
         """Load FunASR models based on language"""
@@ -75,6 +81,18 @@ class ASRProcessor:
         
         self._log_funasr_state("load_complete")
     
+    def _snapshot_base_config(self):
+        """Capture baseline FunASR configuration for later resets."""
+        if self.funasr_model is None:
+            logger.warning("Cannot snapshot FunASR configuration: model not initialized")
+            return
+        
+        self._base_kwargs = copy.deepcopy(getattr(self.funasr_model, "kwargs", {}))
+        self._base_vad_kwargs = copy.deepcopy(getattr(self.funasr_model, "vad_kwargs", {}) or {})
+        self._base_punc_kwargs = copy.deepcopy(getattr(self.funasr_model, "punc_kwargs", {}) or {})
+        self._base_spk_kwargs = copy.deepcopy(getattr(self.funasr_model, "spk_kwargs", {}) or {})
+        
+        # Respect explicit overrides defined in code/env (takes priority over defaults)
     def _log_funasr_state(self, phase: str):
         """
         Log internal FunASR state to help diagnose device/batching issues.
@@ -116,7 +134,23 @@ class ASRProcessor:
         if self.funasr_model is None:
             return
         
-        target_threads = int(os.getenv("TORCH_NUM_THREADS", "4"))
+        # Restore baseline configuration (module defaults)
+        if self._base_kwargs:
+            self.funasr_model.kwargs.clear()
+            self.funasr_model.kwargs.update(self._base_kwargs)
+        if isinstance(getattr(self.funasr_model, "vad_kwargs", None), dict):
+            self.funasr_model.vad_kwargs.clear()
+            self.funasr_model.vad_kwargs.update(self._base_vad_kwargs)
+        if isinstance(getattr(self.funasr_model, "punc_kwargs", None), dict):
+            self.funasr_model.punc_kwargs.clear()
+            self.funasr_model.punc_kwargs.update(self._base_punc_kwargs)
+        if isinstance(getattr(self.funasr_model, "spk_kwargs", None), dict):
+            self.funasr_model.spk_kwargs.clear()
+            self.funasr_model.spk_kwargs.update(self._base_spk_kwargs)
+        
+        # Determine effective ncpu (code/module defaults)
+        target_threads = self._base_kwargs.get("ncpu", 4) if self._base_kwargs else 4
+        
         if torch.get_num_threads() != target_threads:
             torch.set_num_threads(target_threads)
             logger.info("Adjusted torch.set_num_threads to %d", target_threads)
